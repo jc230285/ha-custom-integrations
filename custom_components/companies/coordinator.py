@@ -135,6 +135,8 @@ class CompaniesCoordinator(DataUpdateCoordinator):
                     "source": "wise",
                     "key": key,
                     "name": f"{account.get('balance_name', '')} {account['currency']}".strip(),
+                    "native_balance": account["balance"],
+                    "native_currency": account["currency"],
                     "balance_gbp": gbp,
                     "share": share,
                 })
@@ -162,6 +164,8 @@ class CompaniesCoordinator(DataUpdateCoordinator):
                     "source": "blockonomics",
                     "key": key,
                     "name": wallet.get("wallet_name", ""),
+                    "native_balance": wallet["balance_btc"],
+                    "native_currency": "BTC",
                     "balance_gbp": gbp,
                     "share": share,
                 })
