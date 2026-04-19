@@ -67,9 +67,13 @@ class WiseCoordinator(DataUpdateCoordinator):
                 balances = await self._fetch_balances(session, headers, profile_id)
 
                 for balance in balances:
-                    currency = balance["currency"]
-                    amount = balance["amount"]["value"]
+                    bal_amount = balance.get("amount", balance.get("cashAmount", {}))
+                    currency = bal_amount.get("currency", balance.get("currency", ""))
+                    amount = bal_amount.get("value", 0)
                     reserved = balance.get("reservedAmount", {}).get("value", 0)
+                    bal_type = balance.get("type", "STANDARD")
+                    bal_name = balance.get("name") or ""
+                    bal_id = balance.get("id", "")
 
                     if amount == 0 and reserved == 0:
                         continue
@@ -77,7 +81,11 @@ class WiseCoordinator(DataUpdateCoordinator):
                     rate = self._exchange_rates.get(currency, 1.0)
                     balance_gbp = round(amount / rate, 2) if rate else amount
 
-                    key = f"{profile_id}_{currency}"
+                    if bal_name:
+                        key = f"{profile_id}_{bal_name}_{currency}"
+                    else:
+                        key = f"{profile_id}_{currency}"
+
                     accounts[key] = {
                         "balance": amount,
                         "currency": currency,
@@ -86,7 +94,9 @@ class WiseCoordinator(DataUpdateCoordinator):
                         "profile_name": profile_name,
                         "profile_type": profile_type,
                         "profile_id": profile_id,
-                        "balance_id": balance.get("id"),
+                        "balance_id": bal_id,
+                        "balance_type": bal_type,
+                        "balance_name": bal_name,
                         "registration_number": registration_number,
                     }
 
@@ -105,16 +115,13 @@ class WiseCoordinator(DataUpdateCoordinator):
             return await resp.json()
 
     async def _fetch_balances(self, session, headers, profile_id: int) -> list:
-        """Fetch balances for a profile."""
-        url = f"{WISE_BALANCES_URL}?profileId={profile_id}"
+        """Fetch balances for a profile using v4 API (includes savings/jars)."""
+        url = f"{WISE_BALANCES_URL}/{profile_id}/balances?types=STANDARD,SAVINGS"
         async with session.get(url, headers=headers) as resp:
             if resp.status != 200:
                 _LOGGER.warning("Failed to fetch balances for profile %s: %s", profile_id, resp.status)
                 return []
-            data = await resp.json()
-            if data and isinstance(data, list) and "balances" in data[0]:
-                return data[0]["balances"]
-            return []
+            return await resp.json()
 
     async def _fetch_exchange_rates(self, session) -> None:
         """Fetch exchange rates with GBP as base."""

@@ -55,10 +55,21 @@ class WiseBalanceSensor(CoordinatorEntity, SensorEntity):
         profile_name = data["profile_name"]
         currency = data["currency"]
         profile_type = data["profile_type"]
+        bal_name = data.get("balance_name", "")
+        bal_type = data.get("balance_type", "STANDARD")
 
         self._attr_unique_id = f"{entry.entry_id}_{account_key}"
-        self._attr_name = f"{profile_name} {currency}"
-        self._attr_icon = "mdi:account-cash" if profile_type == "personal" else "mdi:domain"
+        if bal_name:
+            self._attr_name = f"{profile_name} {bal_name} {currency}"
+        else:
+            self._attr_name = f"{profile_name} {currency}"
+
+        if profile_type == "personal":
+            self._attr_icon = "mdi:account-cash"
+        elif bal_type == "SAVINGS":
+            self._attr_icon = "mdi:piggy-bank"
+        else:
+            self._attr_icon = "mdi:domain"
 
     @property
     def _share(self) -> float:
@@ -90,6 +101,8 @@ class WiseBalanceSensor(CoordinatorEntity, SensorEntity):
             "profile_name": data["profile_name"],
             "profile_type": data["profile_type"],
             "account_type": "Personal" if data["profile_type"] == "personal" else "Company",
+            "balance_type": data.get("balance_type", "STANDARD"),
+            "balance_name": data.get("balance_name", ""),
             "registration_number": data.get("registration_number", ""),
             "reserved_amount": data["reserved_amount"],
         }
