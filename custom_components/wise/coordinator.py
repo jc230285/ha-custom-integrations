@@ -11,7 +11,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
-    DEFAULT_UPDATE_INTERVAL,
     DOMAIN,
     EXCHANGE_RATE_URL,
     WISE_BALANCES_URL,
@@ -19,6 +18,8 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+UPDATE_INTERVAL = timedelta(hours=1)
 
 
 class WiseCoordinator(DataUpdateCoordinator):
@@ -30,11 +31,10 @@ class WiseCoordinator(DataUpdateCoordinator):
             hass,
             _LOGGER,
             name=DOMAIN,
-            update_interval=timedelta(minutes=DEFAULT_UPDATE_INTERVAL),
+            update_interval=UPDATE_INTERVAL,
         )
         self.api_key = entry.data[CONF_API_KEY]
         self._exchange_rates: dict[str, float] = {}
-        self._rates_fetched = False
 
     async def _async_update_data(self) -> dict:
         """Fetch data from Wise API."""
@@ -46,19 +46,21 @@ class WiseCoordinator(DataUpdateCoordinator):
         try:
             async with aiohttp.ClientSession() as session:
                 profiles = await self._fetch_profiles(session, headers)
-                if not self._rates_fetched:
-                    await self._fetch_exchange_rates(session)
+                await self._fetch_exchange_rates(session)
 
                 accounts = {}
                 for profile in profiles:
                     profile_id = profile["id"]
-                    profile_type = profile["type"]
-                    details = profile.get("details", {})
+                    profile_type = profile["type"].lower()
 
                     if profile_type == "personal":
-                        profile_name = f"{details.get('firstName', '')} {details.get('lastName', '')}".strip()
+                        profile_name = profile.get("fullName", "").strip() or "Personal"
                     else:
-                        profile_name = details.get("name", "Business")
+                        profile_name = (
+                            profile.get("businessName")
+                            or profile.get("fullName", "").strip()
+                            or f"Business {profile_id}"
+                        )
 
                     balances = await self._fetch_balances(session, headers, profile_id)
 
@@ -66,10 +68,14 @@ class WiseCoordinator(DataUpdateCoordinator):
                         currency = balance["currency"]
                         amount = balance["amount"]["value"]
                         reserved = balance.get("reservedAmount", {}).get("value", 0)
+
+                        if amount == 0 and reserved == 0:
+                            continue
+
                         rate = self._exchange_rates.get(currency, 1.0)
                         balance_gbp = round(amount / rate, 2) if rate else amount
 
-                        key = f"{profile_type}_{currency}"
+                        key = f"{profile_id}_{currency}"
                         accounts[key] = {
                             "balance": amount,
                             "currency": currency,
@@ -113,8 +119,6 @@ class WiseCoordinator(DataUpdateCoordinator):
                     data = await resp.json()
                     self._exchange_rates = data.get("rates", {})
                     self._exchange_rates["GBP"] = 1.0
-                    self._rates_fetched = True
-                    _LOGGER.debug("Fetched exchange rates: %s currencies", len(self._exchange_rates))
         except Exception:
             _LOGGER.warning("Failed to fetch exchange rates, using defaults")
             self._exchange_rates = {"GBP": 1.0, "USD": 1.27, "EUR": 1.17}

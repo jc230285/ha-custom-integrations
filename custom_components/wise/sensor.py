@@ -23,7 +23,7 @@ async def async_setup_entry(
     coordinator: WiseCoordinator = hass.data[DOMAIN][entry.entry_id]
 
     entities = []
-    for key, account_data in coordinator.data.items():
+    for key in coordinator.data:
         entities.append(WiseBalanceSensor(coordinator, entry, key))
 
     async_add_entities(entities)
@@ -35,6 +35,7 @@ class WiseBalanceSensor(CoordinatorEntity, SensorEntity):
     _attr_device_class = SensorDeviceClass.MONETARY
     _attr_state_class = SensorStateClass.TOTAL
     _attr_has_entity_name = True
+    _attr_native_unit_of_measurement = "GBP"
 
     def __init__(
         self,
@@ -47,17 +48,21 @@ class WiseBalanceSensor(CoordinatorEntity, SensorEntity):
         self._account_key = account_key
         data = coordinator.data[account_key]
 
+        profile_name = data["profile_name"]
+        currency = data["currency"]
+        profile_type = data["profile_type"]
+
         self._attr_unique_id = f"{entry.entry_id}_{account_key}"
-        self._attr_name = f"Wise {data['profile_type'].title()} {data['currency']}"
-        self._attr_native_unit_of_measurement = data["currency"]
+        self._attr_name = f"{profile_name} {currency}"
+        self._attr_icon = "mdi:account-cash" if profile_type == "personal" else "mdi:domain"
 
     @property
     def native_value(self) -> float | None:
-        """Return the balance."""
+        """Return the balance in GBP."""
         data = self.coordinator.data.get(self._account_key)
         if data is None:
             return None
-        return data["balance"]
+        return data["balance_gbp"]
 
     @property
     def extra_state_attributes(self) -> dict:
@@ -66,10 +71,10 @@ class WiseBalanceSensor(CoordinatorEntity, SensorEntity):
         if data is None:
             return {}
         return {
-            "currency": data["currency"],
-            "balance_gbp": data["balance_gbp"],
+            "native_balance": data["balance"],
+            "native_currency": data["currency"],
             "profile_name": data["profile_name"],
             "profile_type": data["profile_type"],
-            "account_type": "Current",
+            "account_type": "Personal" if data["profile_type"] == "personal" else "Company",
             "reserved_amount": data["reserved_amount"],
         }
