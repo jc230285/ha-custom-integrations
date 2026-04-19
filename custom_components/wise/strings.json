@@ -1,0 +1,18 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Wise",
+        "description": "Enter your Wise API token. Generate one at https://wise.com/settings/api-tokens",
+        "data": {
+          "api_key": "API Token"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid API token",
+      "cannot_connect": "Failed to connect to Wise API",
+      "no_profiles": "No profiles found for this token"
+    }
+  }
+}

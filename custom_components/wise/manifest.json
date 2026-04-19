@@ -1,0 +1,11 @@
+{
+  "domain": "wise",
+  "name": "Wise",
+  "codeowners": ["@jc230285"],
+  "config_flow": true,
+  "documentation": "https://github.com/jc230285/ha-custom-integrations",
+  "integration_type": "hub",
+  "iot_class": "cloud_polling",
+  "requirements": ["aiohttp"],
+  "version": "1.0.0"
+}
