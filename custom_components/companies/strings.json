@@ -1,0 +1,65 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Company Management",
+        "description": "This integration manages companies and links accounts from Wise and Blockonomics."
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Company Management",
+        "data": {
+          "action": "Choose action"
+        }
+      },
+      "add_company": {
+        "title": "Add Company",
+        "data": {
+          "name": "Company Name",
+          "registration_number": "Registration Number",
+          "company_type": "Type"
+        }
+      },
+      "select_edit": {
+        "title": "Edit Company",
+        "data": {
+          "company": "Select company"
+        }
+      },
+      "edit_company": {
+        "title": "Edit Company",
+        "data": {
+          "name": "Company Name",
+          "registration_number": "Registration Number",
+          "company_type": "Type"
+        }
+      },
+      "select_delete": {
+        "title": "Delete Company",
+        "data": {
+          "company": "Select company to delete"
+        }
+      },
+      "select_assign": {
+        "title": "Assign Accounts",
+        "data": {
+          "company": "Select company"
+        }
+      },
+      "assign_accounts": {
+        "title": "Assign Accounts to {company}",
+        "description": "Select which accounts belong to this company.",
+        "data": {
+          "accounts": "Accounts"
+        }
+      }
+    },
+    "abort": {
+      "no_companies": "No companies configured. Add a company first.",
+      "no_accounts": "No accounts found. Set up Wise or Blockonomics first."
+    }
+  }
+}

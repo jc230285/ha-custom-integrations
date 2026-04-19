@@ -1,0 +1,29 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Blockonomics",
+        "description": "Enter your Blockonomics API key from https://www.blockonomics.co/dashboard#/settings",
+        "data": {
+          "api_key": "API Key"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid API key",
+      "cannot_connect": "Failed to connect to Blockonomics API",
+      "no_wallets": "No wallets found for this API key"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Blockonomics Share Percentages",
+        "description": "Set your ownership share (%) for each wallet."
+      }
+    },
+    "abort": {
+      "no_data": "No wallet data available yet."
+    }
+  }
+}

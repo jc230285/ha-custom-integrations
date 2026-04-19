@@ -1,0 +1,12 @@
+{
+  "domain": "companies",
+  "name": "Company Management",
+  "codeowners": ["@jc230285"],
+  "config_flow": true,
+  "documentation": "https://github.com/jc230285/ha-custom-integrations",
+  "integration_type": "hub",
+  "iot_class": "local_push",
+  "after_dependencies": ["wise", "blockonomics"],
+  "requirements": [],
+  "version": "1.0.0"
+}
