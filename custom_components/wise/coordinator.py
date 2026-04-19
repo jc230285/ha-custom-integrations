@@ -62,6 +62,8 @@ class WiseCoordinator(DataUpdateCoordinator):
                         or f"Business {profile_id}"
                     )
 
+                registration_number = profile.get("registrationNumber", "")
+
                 balances = await self._fetch_balances(session, headers, profile_id)
 
                 for balance in balances:
@@ -85,6 +87,7 @@ class WiseCoordinator(DataUpdateCoordinator):
                         "profile_type": profile_type,
                         "profile_id": profile_id,
                         "balance_id": balance.get("id"),
+                        "registration_number": registration_number,
                     }
 
             _LOGGER.debug("Wise: %d accounts with non-zero balances", len(accounts))

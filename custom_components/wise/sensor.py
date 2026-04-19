@@ -90,5 +90,6 @@ class WiseBalanceSensor(CoordinatorEntity, SensorEntity):
             "profile_name": data["profile_name"],
             "profile_type": data["profile_type"],
             "account_type": "Personal" if data["profile_type"] == "personal" else "Company",
+            "registration_number": data.get("registration_number", ""),
             "reserved_amount": data["reserved_amount"],
         }
