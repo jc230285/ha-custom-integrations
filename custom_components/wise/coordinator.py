@@ -3,11 +3,10 @@
 import logging
 from datetime import timedelta
 
-import aiohttp
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_API_KEY
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
@@ -42,54 +41,57 @@ class WiseCoordinator(DataUpdateCoordinator):
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
+        session = async_get_clientsession(self.hass)
 
         try:
-            async with aiohttp.ClientSession() as session:
-                profiles = await self._fetch_profiles(session, headers)
-                await self._fetch_exchange_rates(session)
+            profiles = await self._fetch_profiles(session, headers)
+            _LOGGER.debug("Fetched %d Wise profiles", len(profiles))
+            await self._fetch_exchange_rates(session)
 
-                accounts = {}
-                for profile in profiles:
-                    profile_id = profile["id"]
-                    profile_type = profile["type"].lower()
+            accounts = {}
+            for profile in profiles:
+                profile_id = profile["id"]
+                profile_type = profile["type"].lower()
 
-                    if profile_type == "personal":
-                        profile_name = profile.get("fullName", "").strip() or "Personal"
-                    else:
-                        profile_name = (
-                            profile.get("businessName")
-                            or profile.get("fullName", "").strip()
-                            or f"Business {profile_id}"
-                        )
+                if profile_type == "personal":
+                    profile_name = profile.get("fullName", "").strip() or "Personal"
+                else:
+                    profile_name = (
+                        profile.get("businessName")
+                        or profile.get("fullName", "").strip()
+                        or f"Business {profile_id}"
+                    )
 
-                    balances = await self._fetch_balances(session, headers, profile_id)
+                balances = await self._fetch_balances(session, headers, profile_id)
 
-                    for balance in balances:
-                        currency = balance["currency"]
-                        amount = balance["amount"]["value"]
-                        reserved = balance.get("reservedAmount", {}).get("value", 0)
+                for balance in balances:
+                    currency = balance["currency"]
+                    amount = balance["amount"]["value"]
+                    reserved = balance.get("reservedAmount", {}).get("value", 0)
 
-                        if amount == 0 and reserved == 0:
-                            continue
+                    if amount == 0 and reserved == 0:
+                        continue
 
-                        rate = self._exchange_rates.get(currency, 1.0)
-                        balance_gbp = round(amount / rate, 2) if rate else amount
+                    rate = self._exchange_rates.get(currency, 1.0)
+                    balance_gbp = round(amount / rate, 2) if rate else amount
 
-                        key = f"{profile_id}_{currency}"
-                        accounts[key] = {
-                            "balance": amount,
-                            "currency": currency,
-                            "balance_gbp": balance_gbp,
-                            "reserved_amount": reserved,
-                            "profile_name": profile_name,
-                            "profile_type": profile_type,
-                            "profile_id": profile_id,
-                            "balance_id": balance.get("id"),
-                        }
+                    key = f"{profile_id}_{currency}"
+                    accounts[key] = {
+                        "balance": amount,
+                        "currency": currency,
+                        "balance_gbp": balance_gbp,
+                        "reserved_amount": reserved,
+                        "profile_name": profile_name,
+                        "profile_type": profile_type,
+                        "profile_id": profile_id,
+                        "balance_id": balance.get("id"),
+                    }
 
-                return accounts
+            _LOGGER.debug("Wise: %d accounts with non-zero balances", len(accounts))
+            return accounts
 
-        except aiohttp.ClientError as err:
+        except Exception as err:
+            _LOGGER.error("Error fetching Wise data: %s", err)
             raise UpdateFailed(f"Error communicating with Wise API: {err}") from err
 
     async def _fetch_profiles(self, session, headers) -> list:

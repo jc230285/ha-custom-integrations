@@ -14,5 +14,16 @@
       "cannot_connect": "Failed to connect to Wise API",
       "no_profiles": "No profiles found for this token"
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Wise Share Percentages",
+        "description": "Set your ownership share (%) for each account. The displayed balance will be adjusted accordingly."
+      }
+    },
+    "abort": {
+      "no_data": "No account data available. Please wait for the next data refresh."
+    }
   }
 }
